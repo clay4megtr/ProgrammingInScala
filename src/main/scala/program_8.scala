@@ -173,29 +173,83 @@ object program_8 {
   someNumbers.foreach(println)
 
 
+  /**
+    * 闭包
+    * 依照这个函数字面量在运行时创建的函数值(对象)称为闭包
+    * (x:Int) => x+1  不是闭包，因为这个字面量在编写的时候已经封闭了，
+    * 而任何带有自由变量的含数字面量，如 (x:Int) => x+more 都是开放项，
+    * 因此任意以(x:Int) => x+more 为模板在运行期间创建的函数值都必将捕获对自由变量more 的绑定，因此得到的函数值都必将包含指向捕获的more 变量的索引
+    */
+
+  var more = 1
+  val addMore = (x:Int) => x+more
 
 
+  more = 9999
+  println(addMore(10))  //10009
 
 
+  //闭包对捕获变量做出的改变在闭包之外也同样可见
+  var sum1 = 0
+  someNumbers.foreach(sum1 += _)
+
+  println(sum1) //-15
+
+  /**
+    * 如果闭包访问了某些在程序运行时有若干不同备份的变量，比如闭包使用了某个函数的本地变量，
+    * 并且函数被调用很多次会怎样，每一次访问使用的是变量的哪个实例
+    *
+    * ：使用的实例是那个在闭包被创建的时候活跃的
+    */
+
+  def makeIncrease(more:Int) = (x:Int) => x+more
+
+  val incr1 = makeIncrease(1)
+  val incr2 = makeIncrease(9999)
+
+  //当把这些闭包应用到参数上时，回来的结果依赖于闭包被创建时more是如何创建的
+  incr1(10) // 11
+  incr2(10)  //10009
 
 
+  /**
+    * 重复参数
+    * 函数内部的类型是声明参数类型的数组，因此，这里实际是：Array[String]
+    */
+  def echo(args:String*) =
+    for (arg <- args) println(arg)
+
+  echo("one")
+  echo("one","two")
+
+  val arr = Array("one","two","three")
+
+  //错误写法
+  //echo(arr)
+
+  //正确写法：告诉编译器把arr的每个元素当做参数，而不是一个array类型的参数
+  echo(arr: _*)
 
 
+  /**
+    * 尾递归（）
+    * 在函数最后一个动作调用调用自己的函数，被称为尾递归
+    * scala编译器检测到尾递归就用新值更新函数参数，然后把它替换成一个回到函数开头的跳转
+    */
+  def approximate(guess: Double):Double =
+    if(isGoodEnough(guess)) guess
+    else approximate(improve(guess))
+
+  //辅助函数
+  def isGoodEnough(x:Double) = true
+  def improve(x:Double):Double = 0.0
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  //while 循环的方式
+  def approximateLoop(initialGuess:Double):Double = {
+    var guess = initialGuess
+    while(!isGoodEnough(guess))
+      guess = improve(guess)
+    guess
+  }
 }
