@@ -1,0 +1,2 @@
+ls: +: No such file or directory
+ls: +: No such file or directory
