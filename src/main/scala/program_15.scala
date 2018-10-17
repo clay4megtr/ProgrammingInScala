@@ -7,7 +7,8 @@
   * 样本类最大的好处就是支持模式匹配
   */
 
-abstract class Expr
+//sealed  封闭类
+sealed abstract class Expr
 
 //以下四个：每个代表一种样本类
 case class Var(name: String) extends Expr
@@ -37,6 +38,8 @@ case class BinOp(operator: String, left: Expr, right: Expr) extends Expr
   */
 object program_15 {
 
+  //===========================封闭类=======================================
+  //sealed 修饰符
 
   //===========================模式重叠=======================================
   // 如果出现模式重叠，编译器将直接报错；
