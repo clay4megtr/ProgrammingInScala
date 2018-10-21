@@ -76,7 +76,7 @@ object program_8 {
 
   (x: Int) => x + 1 //函数字面量
 
-  var increase = (x: Int) => x + 1 //把函数字面量赋值给变量increase
+  var increase = (x: Int) => x + 1  //把函数字面量赋值给变量increase
 
   increase(1) //函数的调用
 

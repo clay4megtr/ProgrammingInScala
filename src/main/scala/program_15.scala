@@ -1,3 +1,4 @@
+import scala.actors.Actor
 
 /**
   * 样本类和模式匹配
@@ -7,7 +8,7 @@
   * 样本类最大的好处就是支持模式匹配
   */
 
-//sealed  封闭类
+//sealed  封闭类：除了类定义所在的文件之外不能再添加任何新的子类，这样在使用样本类做模式匹配的时候，如果缺失模式组合，编译器会发出警告
 sealed abstract class Expr
 
 //以下四个：每个代表一种样本类
@@ -38,8 +39,80 @@ case class BinOp(operator: String, left: Expr, right: Expr) extends Expr
   */
 object program_15 {
 
+  //例子
+  // 略
+
+
+  //===========================for 表达式里的模式=======================
+  val capitals = Map("France" -> "paris","Japan" -> "Tokyo")
+
+  //一定能匹配到
+  for((country,city) <- capitals)
+    println("country :" + country + " city is " + city)
+
+  //不一定能匹配到
+  val results = List(Some("apple"),None,Some("orange"))
+  for(Some(fruit) <- results)
+    println(fruit)
+
+  //===========================用做偏函数的样本序列=======================
+
+  // 函数: Option[Int]  是参数，{} 内是函数体
+  val withDefault: Option[Int] => Int = {
+    case Some(x) => x
+    case None => 0
+  }
+  println(withDefault(Some(10)))
+  println(withDefault(None))
+
+  //Actor
+  /*react{
+    case (name:String,actor:Actor) =>{
+      actor ! getip(name)
+      act()
+    }
+    case msg =>{
+      println("Unhandled message: " + msg)
+      act()
+    }
+  }*/
+
+  val second: List[Int] => Int = {
+    case x :: y :: _ => y
+  }
+
+  println(second(List(5,6,7)))
+  //println(second(List()))   //报错
+
+
+  //===========================模式在变量定义中===========================
+  val exp = new BinOp("*",Number(5),Number(1))
+  val BinOp(op,left,right) = exp
+
+
+  //===========================Option 类===========================
+
+  println(capitals get "France")
+  println(capitals get "North Pole")
+
+  // 模式匹配的方式
+  def show(x:Option[String]) = x match {
+    case Some(s) => x
+    case None => "?"
+  }
+
+  println(show(capitals get "France"))
+  println(show(capitals get "North Pole"))
+
   //===========================封闭类=======================================
-  //sealed 修饰符
+  //sealed 修饰符修饰抽象类Expr
+
+  // 编译器会发生警告，因为缺少Unop和BinOp，解决方式是使用@unchecked
+  def describe(e:Expr):String = (e: @unchecked) match {
+    case Number(_) => s"a number"
+    case Var(_) => "a var iable"
+  }
+
 
   //===========================模式重叠=======================================
   // 如果出现模式重叠，编译器将直接报错；
