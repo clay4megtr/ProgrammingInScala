@@ -28,7 +28,7 @@ pgrep gedit  # pgrep  获取运行程序的进程pid
 
 # cat /proc/$PID/environ | tr '\0' '\n'   # 默认以null字符（\0）分割，可以使用tr命令将\0替换成\n，以进行格式化
 
-var=value  # 如果value不包含任何的空白字符后者$变量引用，那么不需要使用引号进行引用，反之，则必须使用单引号或者双引号，如果有$变量引用，必须使用双引号
+var=value  # 如果value不包含任何的空白字符或者$变量引用，那么不需要使用引号进行引用，反之，则必须使用单引号或者双引号，如果有$变量引用，必须使用双引号
 
 #==========注意：var = value 和 var=value 是完全不同的操作，前者是相等操作，后者是赋值操作=================
 
@@ -298,37 +298,169 @@ min_remainder=$(expr ${hour_remainder} % 60) ;     # 剩余的秒数
 echo "已经过去了${day_distance}天，${hour_distance}小时，${hour_distance}分钟"
 
 # ===========shell中的乘号是:    \*=========
-# sum_min=$(expr $day_distance \* 1440 + $hour_distance \* 60 + $min_distance)
+sum_min=$(expr $day_distance \* 1440 + $hour_distance \* 60 + $min_distance)
 
 
 # sleep 设置睡眠时间
 
+count=0
+while [ $count -lt 3 ];
+do
+if [ $count -lt 3 ]; then
+  let count++;
+  sleep 1
+  tput rc    # 恢复之前存储的光标位置，在终端打印出新的count值，
+  tput ed    # 清楚从当前光标位置到行尾之间的所有内容
+  echo -n $count
+else
+  echo "echo number done"
+fi
+done
+
+
+###################################################################################
+
+                                # 调试脚本
+
+###################################################################################
+
+for i in {1..6}
+do
+  set -x
+  echo $i
+  set +x     # 只有set -x  和   set +x   区域内的调试信息会被打印出来
+done
+echo "script executed"
 
 
 
+###################################################################################
+
+                                # 函数和参数、读取命令序列输出
+
+###################################################################################
+
+fname()
+{
+  echo $1,$2;
+  echo "$@";  # 以列表的形式一次性打印所有参数
+  echo "$*";  # 类似于"$@"，但是参数被作为单个实体
+  return 0;   # 返回值
+}
+
+fname 123124 234234 2343
+
+# 命令序列的输出
+ls | cat -n > out.txt
+
+
+###################################################################################
+
+       # 内部字段分割符：IFS
+
+###################################################################################
+
+# 内部字段分割符：是用于特定用途的定界符，IFS是存储定界符的环境变量，它是当前shell环境使用的默认定界字符串
+
+# 分割csv文件
+data="name,sex,rollno,lacation"
+# 可以使用INF读取变量中的每个条目
+oldIFS=$IFS
+IFS=,
+for item in $data;
+do
+  echo item: $item
+done
+
+IFS=$oldIFS  # 恢复
+
+# 默认分隔符是空白符：（换行符，制表符，空格）
+
+
+#获取用户对应的shell
+line="root:x:0:0:root:/root:/bin/bash"
+oldIFS=$IFS
+IFS=:
+count=0
+for item in $line
+do
+
+[ $count -eq 0 ] && user=$item
+[ $count -eq 6 ] && shell=$item
+let count++
+done;
+
+IFS=$oldIFS  # 恢复
+echo $user\'s shell is $shell
 
 
 
+###################################################################################
+
+                    # 比较与测试
+
+###################################################################################
+
+#数字的比较
+num=3
+
+if [ $num -lt 0 ]; then
+  echo "num < 0"
+elif [ $num -gt 0 ] && [ $num -lt 10 ]; then    # 多个判断条件的写法
+  echo "0 < num < 10"
+else
+  echo "num > 10"
+fi
 
 
+if [ $num -lt 0 ]; then
+  echo "num < 0"
+elif [ $num -gt 0 -a $num -lt 10 ]; then    # -a 代表逻辑与，-o 代表逻辑或
+  echo "0 < num < 10"
+else
+  echo "num > 10"
+fi
 
 
+# 简单写法
+# [ condation ] && action   # condation为真，执行action
+# [ condation ] || action   # condation为假，执行action
 
 
+## 文件系统相关测试
+var=/bin
+[ -f $var ]        #包含正常的文件路径或文件名
+[ -x $var ]        #文件可执行
+[ -d $var ]        #是目录
+[ -e $var ]        #文件存在
+[ -c $var ]        #是一个字符设备文件的路径
+[ -b $var ]        #块设备文件的路径
+[ -r $var ]        #可读
+[ -w $var ]        #可写
+[ -L $var ]        #符号链接
+
+fpath="/etc/passwd"
+if [ -e $fpath ]; then
+  echo "file exist"
+else
+  echo "file not exists"
+fi
 
 
+# 字符串比较
+# 最好用 [[]] ，否则容易出现问题
+str1="abc"
+str2=""
+
+[[ $str1 = $str2 ]]   # 字符串相等
+[[ $str1 == $str2 ]]   # 同上
+[[ $str1 != $str2 ]]
+[[ $str1 > $str2 ]]     # 字典序
+
+[[ -z $str1 ]]         # 空
+[[ -n $str1 ]]          # 非空
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+if [[ -n $str1 ]] && [[ -z $str2 ]]; then    # 多个判断条件的情况；
+  echo "yes"
+fi

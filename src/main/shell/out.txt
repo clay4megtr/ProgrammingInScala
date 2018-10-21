@@ -1,2 +1,7 @@
-ls: +: No such file or directory
-ls: +: No such file or directory
+     1	log.txt
+     2	out.txt
+     3	output.txt
+     4	program_1.sh
+     5	stderr.txt
+     6	stdout.txt
+     7	temp.txt
