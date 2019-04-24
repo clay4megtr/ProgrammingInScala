@@ -4,6 +4,7 @@ a="aa"
 echo 'hello ${a} world!'       # 单引号不会对变量求值
 
 echo -n "a b c d e"         # -n 取消自动换行
+echo ""
 
 # printf 不会自动换行
 # - 表示左对齐，默认右对齐，5是宽度，.2 指定保留两个小数位
@@ -42,7 +43,7 @@ echo ${#var}      # ${#var} 用户获取var变量的长度
 echo $0        # 查看当前使用的是哪种shell
 
 
-# 查看是都是超级用户：  使用 UID 环境变量    root用户的UID是0
+# 查看是否是超级用户：  使用 UID 环境变量    root用户的UID是0
 if [ $UID -ne 0 ]; then
 echo Non root user, please run as root
 else
@@ -66,7 +67,7 @@ no1=4
 no2=5
 
 # 1. 使用let操作
-let result=no1+no2    # 使用let时，变量名之前不需要添加$
+let result=no1+no2    # 使用let时，变量名之前不需要添加$，但是要注意不能有空格
 echo ${result}
 
 let no1++      # 自增
@@ -244,8 +245,12 @@ alias install='sudo apt-get install'
 # 因为每当一个shell进程生成时，都会执行 ~/.bashrc 的命令
 # echo 'alias cmd="command seq"' >> ~/.bashrc
 
-# $@ 用来获取参数   自动备份的例子
+# $@ 用来获取参数   自动备份的例子 （这个是错误的）
 alias rm='cp $@ ~/backup; rm $@'
+# 正确的如下：
+# 详情可见：https://www.cnblogs.com/f-ck-need-u/p/7385133.html
+alias rm='copy1(){ /bin/cp -a $@ ~/backup;rm $@; };copy1 $@'
+alias rm='move1(){ /bin/mv -f $@ ~/backup; };move1 $@'
 
 # 强制执行linux原本的命令（将命令进行转义）,避免安全问题
 # \command

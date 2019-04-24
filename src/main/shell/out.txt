@@ -2,6 +2,7 @@
      2	out.txt
      3	output.txt
      4	program_1.sh
-     5	stderr.txt
-     6	stdout.txt
-     7	temp.txt
+     5	program_2.sh
+     6	stderr.txt
+     7	stdout.txt
+     8	temp.txt

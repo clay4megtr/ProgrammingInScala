@@ -42,7 +42,7 @@ class Time{
   var celsius:Float = _
   /**
     * 自定义getter setter 方法
-    * 可以依照自己的意愿解释对变量的访问及赋值操作
+    * 好处是：可以依照自己的意愿解释对变量的访问及赋值操作
     */
   def hour:Int = h
   def hour_= (x:Int){
@@ -68,8 +68,8 @@ object program_18 {
     account.withdraw(80)  //true
     account.withdraw(80) //false
 
-    account.hour_=(14)
-    println(account.hour)
+    account.hour_=(14) // setter 方法
+    println(account.hour)  //getter 方法
 
     var clock = new Time()
     clock hour= 12

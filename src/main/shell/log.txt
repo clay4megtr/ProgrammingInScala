@@ -2,5 +2,9 @@ xxxxxxxxxxxxxLog File Header
 This is a test log file
 Function: System statistics
 Log File Header
+
+
+
+
 This is a test log file
 Function: System statistics
