@@ -168,7 +168,7 @@ object program_8 {
     * 如果你正在写一个省略所有参数的偏程序表达，如 println _ 或 sum _ ，而且在代码的某个地方确实需要一个函数
     * 可以去掉下划线从而得到更简单的声明
     */
-  someNumbers.foreach(println _)
+  someNumbers.foreach(println _)  //所以这里传的不是函数，而是函数值；
 
   someNumbers.foreach(println)
 
