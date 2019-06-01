@@ -83,7 +83,7 @@ class Rational(n:Int,d:Int){    //n代表分子，d代表分母    （只有主�
   override def toString: String = n + "/" + d
 
 
-  //定义Int 到 Rational 的隐式转换，
+  //定义Int 到 Rational 的隐式转换，这是为了支持 1 + oneHalf 这样的语法
   implicit def intToRational(x: Int) = new Rational(x)
 }
 
