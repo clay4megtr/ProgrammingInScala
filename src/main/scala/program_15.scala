@@ -234,6 +234,24 @@ object program_15 {
     case _ => expr
   }
 
+  trait User {
+    def name: String
+    def score: Int
+  }
+  class FreeUser(
+                  val name: String,
+                  val score: Int,
+                  val upgradeProbability: Double
+                ) extends User
+  class PremiumUser(
+                     val name: String,
+                     val score: Int
+                   ) extends User
+
+
+
+
+
 
   def main(args: Array[String]): Unit = {
 
