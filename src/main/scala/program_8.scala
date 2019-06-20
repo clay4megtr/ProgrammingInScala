@@ -131,9 +131,9 @@ object program_8 extends Matchers{
   /**
     * sum的部分应用表达式， 只需要在 sum 之后放一个_即可
     */
-  val a = sum _
+  val ab = sum _
 
-  a(1, 2, 3)
+  ab(1, 2, 3)
 
   /**
     * 发生的事情：名为a的变量指向一个函数值对象，这个函数值是由scala编译器依照部分应用表达式sum_，自动产生的类的一个实例，
@@ -142,7 +142,7 @@ object program_8 extends Matchers{
     *
     * scala编译器根据表达式sum_ 自动产生的类的apply方法，简单的把这3个缺失的参数前转到sum，并返回结果
     */
-  a.apply(1, 2, 3)
+  ab.apply(1, 2, 3)
 
   /**
     * 这种一个下划线代表全部参数列表的表达式的另一种用途，就是把它当做转换def为函数值的方式。

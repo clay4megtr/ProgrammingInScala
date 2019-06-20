@@ -1,3 +1,5 @@
+import program_15.FreeUser
+
 import scala.actors.Actor
 
 /**
@@ -235,6 +237,149 @@ object program_15 {
   }
 
 
+  //自定义提取器
+  trait User {
+    def name: String
+    def score: Int
+  }
+  class FreeUser(
+                  val name: String,
+                  val score: Int,
+                  val upgradeProbability: Double
+                ) extends User
+  class PremiumUser(
+                     val name: String,
+                     val score: Int
+                   ) extends User
+  object FreeUser {
+    def unapply(user: FreeUser): Option[(String, Int, Double)] =
+      Some((user.name, user.score, user.upgradeProbability))
+  }
+  object PremiumUser {
+    def unapply(user: PremiumUser): Option[(String, Int)] =
+      Some((user.name, user.score))
+  }
+
+  val user: User = new FreeUser("Daniel", 3000, 0.7d)
+  user match {
+    case FreeUser(name, _, p) =>
+      if (p > 0.75) "$name, what can we do for you today?"
+      else "Hello $name"
+    case PremiumUser(name, _) =>
+      "Welcome back, dear $name"
+  }
+
+
+  //布尔提取器
+  //可以把模式匹配放在单独的提取器中；提取器不一定非要在这个类的伴生对象中定义
+  object premiumCandidate {
+    def unapply(user: FreeUser): Boolean = user.upgradeProbability > 0.75
+  }
+
+  val user2: User = new FreeUser("Daniel", 2500, 0.8d)
+  user2 match {
+      //使用的时候，只需要把一个空的参数列表传递给提取器，因为它并不真的需要提取数据，自然也没必要绑定变量。
+    case freeUser @ premiumCandidate() => initiateSpamProgram(freeUser) //这个函数接收 FreeUser 类型的参数，
+      //因为如此，Scala 的模式匹配也允许将提取器匹配成功的实例绑定到一个变量上， 这个变量有着与提取器所接受的对象相同的类型。这通过 @ 操作符实现。
+      //premiumCandidate 接受 FreeUser 对象，因此，变量 freeUser 的类型也就是 FreeUser 。
+    case _ => sendRegularNewsletter(user2)
+  }
+
+  def initiateSpamProgram(freeUser: FreeUser) = {
+
+  }
+  def sendRegularNewsletter(user: User) = {
+
+  }
+
+
+  //中缀表达式形式 只有针对流或者序列才有必要使用这种方式
+  val xs = 58 #:: 43 #:: 93 #:: Stream.empty
+
+  xs match {
+    case first #:: second #:: _ => first - second
+    case _ => -1
+  }
+
+  //正常形式
+  xs match {
+    case #::(first, #::(second, _)) => first - second
+    case _ => -1
+  }
+
+
+  /**
+    * Scala 提供了提取任意多个参数的模式匹配方法。
+    * def unapplySeq(object: S): Option[Seq[T]]
+    * 这个方法接受类型 S 的对象，返回一个类型参数为 Seq[T] 的 Option 。
+    *
+    * def unapplySeq(object: S): Option[(T1, .., Tn-1, Seq[T])]
+    */
+  val xs1 = 3 :: 6 :: 12 :: Nil
+  xs1 match {
+    case List(a, b) => a * b
+    case List(a, b, c) => a + b + c
+    case _ => 0
+  }
+
+  //也可以使用通配符 _* 匹配长度不确定的列表
+  val xs2 = 3 :: 6 :: 12 :: 24 :: Nil
+  xs2 match {
+    case List(a, b, _*) => a * b
+    case _ => 0
+  }
+
+  //提取出所有的 name
+  object GivenNames {
+    def unapplySeq(name: String): Option[Seq[String]] = {
+      val names = name.trim.split(" ")
+      if (names.forall(_.isEmpty)) None  //全部为空才参会None，
+      else Some(names)  //只要有就返回
+    }
+  }
+
+  def greetWithFirstName(name: String) = name match {
+    case GivenNames(firstName, _*) => s"Good morning, $firstName!"
+    case _ => "Welcome! Please make sure to fill in your name!"
+  }
+
+  //提取姓、名、和包含其他名字的一个序列
+  object Names {
+    def unapplySeq(name: String): Option[(String, String, Seq[String])] = {
+      val names = name.trim.split(" ")
+      if (names.size < 2) None
+      else Some((names.last, names.head, names.drop(1).dropRight(1)))
+    }
+  }
+
+  def greet(fullName: String) = fullName match {
+    case Names(lastName, firstName, _*) =>
+      s"Good morning, $firstName $lastName!"
+    case _ =>
+      "Welcome! Please make sure to fill in your name!"
+  }
+
+
+  /**
+    * 值定义的模式
+    * 也就是在等号左边使用模式，类似python的序列解包
+    */
+  case class Player(name: String, score: Int)
+  def currentPlayer(): Player = Player("Daniel", 3500)
+
+  //在定义类的时候直接去解构它,厉害
+  val Player(name, _) = currentPlayer()
+  doSomethingWithName(name)
+
+  def doSomethingWithName(str: String) = {
+
+  }
+
+  def scores: List[Int] = List()
+  val best :: rest = scores
+  println("The score of our champion is " + best)
+
+
   def main(args: Array[String]): Unit = {
 
     //================================> case 样本类添加的三件事
@@ -250,5 +395,4 @@ object program_15 {
     println(res) //Var(x)
 
   }
-
 }
