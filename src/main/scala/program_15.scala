@@ -236,7 +236,7 @@ object program_15 {
     case _ => expr
   }
 
-
+  //====================================gitbook===================================
   //自定义提取器
   trait User {
     def name: String
@@ -377,7 +377,101 @@ object program_15 {
 
   def scores: List[Int] = List()
   val best :: rest = scores
-  println("The score of our champion is " + best)
+  println("The score of our champion is " + best)  //MatchError，解决建议是：只解构那些在编译期就知道类型的样例类，例如元祖类型
+
+  //什么时候会抛出 MatchError？
+  //必须确保对于每一个可能的输入，都会有一个样例能够匹配成功， 不然，运行时会抛出 MatchError 。
+
+  //返回一个元祖
+  def gameResult(): (String, Int) = ("Daniel", 3500)
+
+  val result = gameResult()
+  println(result._1 + ": " + result._2)  //让人感觉很怪异
+
+  //换成模式匹配的方式 就会好看很多
+  val (name1, score) = gameResult()
+  println(name1 + ": " + score)
+
+
+  /**
+    * for 语句中的模式
+    */
+  def gameResults(): Seq[(String, Int)] =
+    ("Daniel", 3500) :: ("Melissa", 13000) :: ("John", 7000) :: Nil
+
+  def hallOfFame = for {
+    result <- gameResults()
+    (name, score) = result
+    if (score > 5000)
+  } yield name
+
+  //或者直接写成
+  def hallOfFame1 = for {
+    (name, score) <- gameResults()
+    if (score > 5000)
+  } yield name
+
+  //生成器左侧的模式也可以用来过滤。
+  //左侧的模式不匹配空列表。 这不会抛出 MatchError ，但对应的空列表会被丢掉，因此得到的结果是 List(3, 2) 。
+  val lists = List(1, 2, 3) :: List.empty :: List(5, 3) :: Nil
+  for {
+    list @ head :: _ <- lists
+  } yield list.size
+
+
+  /**
+    * 匿名函数中的模式匹配
+    * 模式匹配型的匿名函数的类型就是 PartialFunction
+    * 依据继承关系，将一个模式匹配型的匿名函数传递给接受一元函数的方法（如：map、filter）是没有问题的， 只要这个匿名函数对于所有可能的输入都有定义。
+    */
+  val wordFrequencies = ("habitual", 6) :: ("and", 56) :: ("consuetudinary", 2) ::
+    ("additionally", 27) :: ("homely", 5) :: ("society", 13) :: Nil
+
+  //去掉词频最高的，和词频最低的
+  //问题1：首先，访问元组字段的代码不好看，如果我们可以直接解构出字段，那代码可能更加美观和可读。
+  def wordsWithoutOutliers(wordFrequencies: Seq[(String, Int)]): Seq[String] =
+    wordFrequencies.filter(wf => wf._2 > 3 && wf._2 < 25).map(_._1)
+
+  wordsWithoutOutliers(wordFrequencies) // List("habitual", "homely", "society")
+
+
+  //重构1：模式匹配形式的匿名函数，它是由一系列模式匹配样例组成的，正如模式匹配表达式那样，不过没有 match
+  //要解构的数据类型在编译期就确定了，没有会出错的可能
+  def wordsWithoutOutliers1(wordFrequencies: Seq[(String, Int)]): Seq[String] =
+    wordFrequencies.filter { case (_, f) => f > 3 && f < 25 } map { case (w, _) => w }
+
+
+  /**
+    * 偏函数
+    * 只处理特定输入的函数，可以解决上面需要遍历两次的问题
+    */
+  //重构2：偏函数重构上面的代码
+  val pf: PartialFunction[(String, Int), String] = {
+    case (word, freq) if freq > 3 && freq < 25 => word
+  }
+
+  //方法二：可以显示的扩展 PartialFunction 特质：
+  val pf1 = new PartialFunction[(String, Int), String] {
+    def apply(wordFrequency: (String, Int)) = wordFrequency match {
+      case (word, freq) if freq > 3 && freq < 25 => word
+    }
+    def isDefinedAt(wordFrequency: (String, Int)) = wordFrequency match {
+      case (word, freq) if freq > 3 && freq < 25 => true
+      case _ => false
+    }
+  }
+
+  wordFrequencies.map(pf) // will throw a MatchError , Nil not match
+
+  wordFrequencies.collect(pf) // List("habitual", "homely", "society")  运行正常，因为collect 会直接丢弃不匹配的；
+
+  //最终的形式：collect + 偏函数
+  def wordsWithoutOutliers2(wordFrequencies: Seq[(String, Int)]): Seq[String] =
+    wordFrequencies.collect { case (word, freq) if freq > 3 && freq < 25 => word }
+
+
+  //====================================gitbook===================================
+
 
 
   def main(args: Array[String]): Unit = {
