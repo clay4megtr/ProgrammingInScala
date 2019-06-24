@@ -1,5 +1,5 @@
 
-object program_gitbook {
+object program_gitbook_option {
 
   /**
     * Option
@@ -84,4 +84,38 @@ object program_gitbook {
   val names1: List[Option[String]] = List(Some("Johanna"), None, Some("Daniel"))
   names1.map(_.map(_.toUpperCase)) // List(Some("JOHANNA"), None, Some("DANIEL"))
   names1.flatMap(xs => xs.map(_.toUpperCase)) // List("JOHANNA", "DANIEL")
+
+
+  //过滤 Option
+  UserRepository.findById(1).filter(_.age > 30) // None, because age is <= 30
+  UserRepository.findById(2).filter(_.age > 30) // Some(user), because age is > 30
+  UserRepository.findById(3).filter(_.age > 30) // None, because user is already None
+
+  //for 语句
+
+  //等同于上面嵌套的 flatMap 调用
+  for {
+    user <- UserRepository.findById(1)
+    gender <- user.gender
+  } yield gender // results in Some("male")
+
+  //返回用户的性别
+  for {
+    user <- UserRepository.findAll
+    gender <- user.gender
+  } yield gender
+  // result in List("male")
+
+
+  //在生成器左侧使用 for 语句中生成器的左侧也是一个模式
+  for {
+    User(_, _, _, _, Some(gender)) <- UserRepository.findAll
+  } yield gender
+
+
+  //链接 Option  orElse
+  case class Resource(content: String)
+  val resourceFromConfigDir: Option[Resource] = None
+  val resourceFromClasspath: Option[Resource] = Some(Resource("I was found on the classpath"))
+  val resource = resourceFromConfigDir orElse resourceFromClasspath
 }
