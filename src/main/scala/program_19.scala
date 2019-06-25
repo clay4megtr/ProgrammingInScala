@@ -82,11 +82,13 @@ object Queue {
   * 需要使用 Queue1[+T] 来要求Queue1协变子类型化；即Queue1[String]是Queue1[AnyRef]的子类型，
   * Queue1[-T] 的意思是逆变的，即Queue1[AnyRef]是Queue1[String]的子类型  【这有什么用？】
   */
-trait Queue1[+T] {  //Queue1是特质，Queue1[String]是类型，所以Queue1被称为类型构造器，因为有了它，就能通过指定参数类型来构造新的类型；
+trait Queue1[+T] { //Queue1是特质，Queue1[String]是类型，所以Queue1被称为类型构造器，因为有了它，就能通过指定参数类型来构造新的类型；
   def head: T
 
   def tail: Queue1[T]
 
+  //编译错误，原因：违反了规则：不允许使用+号注解的类型参数用作方法的参数类型；
+  //规则的原因可见下面的：即使没有可变数据，协变仍然会带来问题
   def append(x: T): Queue1[T]
 }
 
@@ -109,23 +111,28 @@ object Queue1 {
 
     def tail: QueueImpl[T] = {
       val q = mirror
-      new QueueImpl(q.leading.tail,q.trailing)
+      new QueueImpl(q.leading.tail, q.trailing)
     }
 
     def append(x: T) =
-      new QueueImpl(leading,x :: trailing)
+      new QueueImpl(leading, x :: trailing)
 
   }
+
 }
 
 
 /**
   * 协变遇到可变数据会带来的问题
   */
-class Cell[+T](init: T){
+class Cell[+T](init: T) {
   private[this] var current = init;
+
   def get = current
-  def set(x: T){current = x}  //假如定义是Cell[+T]，也就是协变的，这里会报编译错误，原因如下
+
+  def set(x: T) {
+    current = x
+  } //假如定义是Cell[+T]，也就是协变的，这里会报编译错误，原因如下
 }
 
 //下面的代码每一行都没错，但是要做的事情却是把整数1赋值给字符串s，很明显是对类型声明的破坏，
@@ -134,7 +141,7 @@ class Cell[+T](init: T){
 val c1 = new Cell[String]("cbc")
 val c2: Cell[Any] = c1
 c2.set(1)
-val s:String = c1.get
+val s: String = c1.get
 
 
 /**
@@ -148,19 +155,95 @@ a2[0] = new Integer(17)
 String s = a1[0]*/
 
 val a1 = Array("abc")
-val a2 : Array[Any] = a1  //error
+val a2: Array[Any] = a1 //error
 
 //兼容java，调用asInstanceOf把Array("abc") 强转为 Array[Object]，所以仍有可能遇到ArrayStore异常
-val a3:Array[Object] = a1.asInstanceOf[Array[Object]]
+val a3: Array[Object] = a1.asInstanceOf[Array[Object]]
 
 
-class StrangeIntQueue extends Queue1[Int] {
-  override def head = ???
+/**
+  * 即使没有可变数据，协变仍然会带来问题
+  * 假设StrangeIntQueue 是协变的
+  * rule: 不允许使用+号注解的类型参数用作方法的参数类型；
+  */
+class StrangeIntQueue extends Queue[Int] {
 
-  override def tail = ???
-
-  override def append(x: Int) = ???
+  override def append(x: Int) = {
+    println(Math.sqrt(x))
+    super.append(x)
+  }
 }
+
+//下面两行代码本身都没错，连在一起 求"abc"的平方根，就错了，
+val x: Queue[Any] = new StrangeIntQueue //如果StrangeIntQueue 是协变的，这里会编译通过
+x.append("abc")
+
+
+/**
+  * 下界
+  * 协变和下界结合在一起，可以提供更灵活的动作行为
+  */
+class Queue2[+T](   //协变的
+                 private val leading: List[T],
+                 private val trailing: List[T]) {
+
+  def this(elems: T*) = this(elems.toList, Nil)
+
+  def append[U >: T](x: U) =   //定义T为U的下界，所以U必须是T的超类型，返回值也是返回超类 Queue2[U]
+    new Queue2[U](leading, x :: trailing)
+}
+val x1: Queue2[Any] = new Queue2[Int]()
+val x2:Queue2[Any] = x1.append("abc")
+
+
+/**
+  * 逆变
+  * 考虑一下为什么；
+  * 考虑一下我们能对OutputChannel[String]做什么，唯一支持的操作就是写一个String给他，而同样的操作对于OutputChannel[AnyRef]
+  * 来说也支持，因此用OutputChannel[AnyRef]替代OutputChannel[String]是安全的，相反，在需要OutputChannel[AnyRef]的地方替换成
+  * OutputChannel[String]却是不安全的，毕竟你可以把任何对象发送给OutputChannel[AnyRef]，而OutputChannel[String]要求写入的值只能是字符串；
+  *
+  * 所以这里用逆变是合适的；
+  */
+trait OutputChannel[-T]{
+  def write(x: T)
+}
+
+
+/**
+  * 协变和逆变结合使用
+  * 我们编写函数类型 A => B 的时候，scala会把它扩展为Function1[A,B]
+  * 可以看一下源码 trait Function1[-S, +T] ,参数类型S是逆变的，结果类型T是协变的，原因可以看下面的分析
+  */
+class Publication(val title: String)
+class Book(title: String) extends Publication(title)
+
+object Library{
+  val books:Set[Book] =
+    Set(
+      new Book("programming in scala"),
+      new Book("walden")
+    )
+  def printBookList(info: Book => AnyRef) ={
+    for(book <- books) println(book)
+  }
+}
+
+object Customer{
+
+  def main(args: Array[String]): Unit = {
+
+    def getTitle(p: Publication):String = p.title
+
+    /**
+      * 这里的参数要求是info: Book => AnyRef，参数是Book，返回值是AnyRef，
+      * 而实际传递的函数值的返回值是String，这也印证了结果类型是协变的这一事实，
+      */
+    Library.printBookList(getTitle)
+  }
+}
+
+
 
 
 object program_19 {
