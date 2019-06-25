@@ -150,7 +150,17 @@ String s = a1[0]*/
 val a1 = Array("abc")
 val a2 : Array[Any] = a1  //error
 
+//兼容java，调用asInstanceOf把Array("abc") 强转为 Array[Object]，所以仍有可能遇到ArrayStore异常
+val a3:Array[Object] = a1.asInstanceOf[Array[Object]]
 
+
+class StrangeIntQueue extends Queue1[Int] {
+  override def head = ???
+
+  override def tail = ???
+
+  override def append(x: Int) = ???
+}
 
 
 object program_19 {
