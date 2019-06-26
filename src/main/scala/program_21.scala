@@ -117,8 +117,9 @@ object program_21 {
     }
 
 
-  //隐式函数的名称是可以被忽略的，因为函数体对他的使用也都是隐式的，所以有下面的写法：视界
-  // T <% Ordered[T]  任何的T都好，只要T能被当做Ordered[T]即可，
+  //上面隐式函数的名称(orderer)是可以被忽略的(因为它叫什么名都无所谓)，函数体对他的使用也都是隐式的，所以有下面的写法：视界
+  // T <% Ordered[T]  任何的T都好，只要T能被当做Ordered[T]即可，不管是利用了隐式转换，还是本身就是Ordered[T]，都可以；
+  //所以这个函数可以省略 隐式参数，
   def maxList[T <% Ordered[T] ](elements: List[T]): T =
     elements match {
       case List() =>
