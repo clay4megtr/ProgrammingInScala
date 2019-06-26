@@ -224,8 +224,10 @@ object Library{
       new Book("programming in scala"),
       new Book("walden")
     )
+
   def printBookList(info: Book => AnyRef) ={
-    for(book <- books) println(book)
+    //调用toString方法并打印，这个行为对于String及所有AnyRef子类的对象都有效，这就是返回结果类型为协变的意义；
+    for(book <- books) println(info(book))
   }
 }
 
@@ -233,6 +235,11 @@ object Customer{
 
   def main(args: Array[String]): Unit = {
 
+    //printBookList需要的函数值是参数为Book类型的，而传递的getTitle的参数是Publication，是Book的超类型，
+    //printBookList接收一个函数值，这个函数值的参数是Book类型，所以只能操作一个Book对象
+    //getTitle这个函数字面量中只能操作Publication对象，
+    //又因为任何声明在 Publication 内的方法在他的子类Book中都有效，所以不管在getTitle中调用Publication的什么方法；
+    //在printBookList中调用info这个函数值对Book做同样操作的时候，都是同样有效的，这就是参数类型是逆变的意义；
     def getTitle(p: Publication):String = p.title
 
     /**
