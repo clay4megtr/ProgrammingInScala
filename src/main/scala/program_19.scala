@@ -183,17 +183,18 @@ x.append("abc")
   * 下界
   * 协变和下界结合在一起，可以提供更灵活的动作行为
   */
-class Queue2[+T](   //协变的
-                 private val leading: List[T],
-                 private val trailing: List[T]) {
+class Queue2[+T]( //协变的
+                  private val leading: List[T],
+                  private val trailing: List[T]) {
 
   def this(elems: T*) = this(elems.toList, Nil)
 
-  def append[U >: T](x: U) =   //定义T为U的下界，所以U必须是T的超类型，返回值也是返回超类 Queue2[U]
+  def append[U >: T](x: U) = //定义T为U的下界，所以U必须是T的超类型，返回值也是返回超类 Queue2[U]
     new Queue2[U](leading, x :: trailing)
 }
+
 val x1: Queue2[Any] = new Queue2[Int]()
-val x2:Queue2[Any] = x1.append("abc")
+val x2: Queue2[Any] = x1.append("abc")
 
 
 /**
@@ -205,7 +206,7 @@ val x2:Queue2[Any] = x1.append("abc")
   *
   * 所以这里用逆变是合适的；
   */
-trait OutputChannel[-T]{
+trait OutputChannel[-T] {
   def write(x: T)
 }
 
@@ -216,22 +217,23 @@ trait OutputChannel[-T]{
   * 可以看一下源码 trait Function1[-S, +T] ,参数类型S是逆变的，结果类型T是协变的，原因可以看下面的分析
   */
 class Publication(val title: String)
+
 class Book(title: String) extends Publication(title)
 
-object Library{
-  val books:Set[Book] =
+object Library {
+  val books: Set[Book] =
     Set(
       new Book("programming in scala"),
       new Book("walden")
     )
 
-  def printBookList(info: Book => AnyRef) ={
+  def printBookList(info: Book => AnyRef) = {
     //调用toString方法并打印，这个行为对于String及所有AnyRef子类的对象都有效，这就是返回结果类型为协变的意义；
-    for(book <- books) println(info(book))
+    for (book <- books) println(info(book))
   }
 }
 
-object Customer{
+object Customer {
 
   def main(args: Array[String]): Unit = {
 
@@ -240,7 +242,7 @@ object Customer{
     //getTitle这个函数字面量中只能操作Publication对象，
     //又因为任何声明在 Publication 内的方法在他的子类Book中都有效，所以不管在getTitle中调用Publication的什么方法；
     //在printBookList中调用info这个函数值对Book做同样操作的时候，都是同样有效的，这就是参数类型是逆变的意义；
-    def getTitle(p: Publication):String = p.title
+    def getTitle(p: Publication): String = p.title
 
     /**
       * 这里的参数要求是info: Book => AnyRef，参数是Book，返回值是AnyRef，
@@ -250,15 +252,95 @@ object Customer{
   }
 }
 
+/**
+  * waiting for settle
+  */
+class Queue3[+T] private(
+                          private[this] var leading: List[T],   //书上说这样是对的，但实际测试仍然有类型检查错误
+                          private[this] var trailing: List[T]
+                        ) {
+  private def mirror() =
+    if (leading.isEmpty) {
+      while (!trailing.isEmpty) {
+        leading = trailing.head :: leading
+        trailing = trailing.tail
+      }
+    }
+
+  def head:T = {
+    mirror()
+    leading.head
+  }
+
+  def tail:Queue3[T] = {
+    mirror()
+    new Queue3(leading.tail,trailing)
+  }
+
+  def append[U >: T](x: U) =
+    new Queue3[U](leading,x :: trailing)
+}
 
 
+/**
+  * 上界
+  */
+class Person(val firstName:String,val lastName:String) extends Ordered[Person]{
+
+  override def compare(that: Person):Int = {
+    val lastNameComparison =
+      lastName.compareToIgnoreCase(that.lastName)
+    if(lastNameComparison != 0)
+      lastNameComparison
+    else
+      firstName.compareToIgnoreCase(that.firstName)
+  }
+
+  override def toString: String = firstName + " " + lastName
+}
+
+//归并排序
+//指明了类型参数T具有上界，Ordered[T]，即传递给 orderedMergeSort 的列表的元素类型必须是Ordered的子类型；
+def orderedMergeSort[T <: Ordered[T]](xs: List[T]):List[T] = {
+  def merge(xs: List[T],ys:List[T]):List[T] =
+    (xs,ys) match {
+      case (Nil,_) => ys
+      case (_,Nil) => xs
+      case (x :: xs1, y :: ys1) =>
+        if(x < y) x :: merge(xs1,ys)
+        else y :: merge(xs,ys1)
+    }
+  val n = xs.length / 2
+  if(n == 0) xs
+  else{
+    val (ys,zs) = xs splitAt n
+    merge(orderedMergeSort(ys),orderedMergeSort(zs))
+  }
+}
+
+val people = List{
+  new Person("Larry","Wall")
+  new Person("Anders","Hej1sberg")
+  new Person("Guido","van Rossum")
+  new Person("Alan","Kay")
+  new Person("Yukihiro","Matsumoto")
+}
+
+//success
+val sortedPeople = orderedMergeSort(people)
+
+/**
+  * 遗留问题
+  * 不够通用，下面的代码运行时会抛出异常，因为Int类不是Ordered[Int]的子类型
+  * 可以通过隐式参数的方式解决；
+  */
+val wontCompile = orderedMergeSort(List(3,2,1))
 
 object program_19 {
 
   def main(args: Array[String]): Unit = {
 
     //new Queue[Int](List(1,2),List(3))  错误，私有构造器
-
 
   }
 }
