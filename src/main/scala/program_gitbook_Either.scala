@@ -112,12 +112,51 @@ object program_gitbook_Either {
   /**
     * 何时使用Either
     */
-  //错误处理
+  //错误处理，相比于Try，它的优势是可以使用更为具体的错误类型；而Try只能用 Throwable
+  //这表明 Either 在处理自定义的错误时是个不错的选择，
   import scala.util.control.Exception.catching
+
+  //第一个参数异常Class类型，上界是Throwable(因为编译器产生的类型总是Throwable)，
+  //第二个参数是一个函数值：空参数，返回T类型(也就是结果类型)
   def handling[Ex <: Throwable, T](exType: Class[Ex])(block: => T): Either[Ex, T] =
+    //这么做的原因是，虽然 scala.util.Exception 提供的方法允许你捕获某些类型的异常，但编译期产生的类型总是Throwable，因此需要使用 asInstanceOf 方法强制转换。
     catching(exType).either(block).asInstanceOf[Either[Ex, T]]
 
+  import java.net.MalformedURLException
+  def parseURL(url: String): Either[MalformedURLException, URL] =
+    handling(classOf[MalformedURLException])(new URL(url))
+
+  //总结：应该避免使用Either来封装意料之外的异常， 使用 Try 来做这种事情会更好，这也是Either的一个缺陷，它无法封装意料之外的异常；
+  case class Customer(age: Int)
+  class Cigarettes
+  case class UnderAgeFailure(age: Int, required: Int)   //自定义样例类异常
+  def buyCigarettes(customer: Customer): Either[UnderAgeFailure, Cigarettes] =
+    if (customer.age < 16) Left(UnderAgeFailure(customer.age, 16))  //错误情况发生时返回一个封装了这个类型实例的 Left
+    else Right(new Cigarettes)
 
 
+  /**
+    * 处理集合
+    * 有些时候，当按顺序依次处理一个集合时，里面的某个元素产生了意料之外的结果，
+    * 但是这时程序不应该直接引发异常，因为这样会使得剩下的元素无法处理。Either也非常适用于这种情况。
+    */
+  type Citizen = String  //公民
+  case class BlackListedResource(url: URL, visitors: Set[Citizen])
 
+  val blacklist = List(
+    BlackListedResource(new URL("https://google.com"), Set("John Doe", "Johanna Doe")),
+    BlackListedResource(new URL("http://yahoo.com"), Set.empty),
+    BlackListedResource(new URL("https://maps.google.com"), Set("John Doe")),
+    BlackListedResource(new URL("http://plus.google.com"), Set.empty)
+  )
+
+  //处理黑名单，其中 Left实例代表可疑的URL，Right是问题市民的集合
+  val checkedBlacklist: List[Either[URL, Set[Citizen]]] =
+    blacklist.map(resource =>
+      if (resource.visitors.isEmpty) Left(resource.url)
+      else Right(resource.visitors))
+
+  //Either 非常适用于这种比异常处理更为普通的使用场景。
+
+  
 }
