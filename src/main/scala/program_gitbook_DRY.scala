@@ -68,4 +68,42 @@ object program_gitbook_DRY {
     n =>
       sizeConstraint(_ <= n)
 
+
+  /**
+    * 函数组合
+    */
+
+  //谓词函数，返回一个新函数，这个新函数总是得出和谓词相对立的结果：
+  def complement[A](predicate: A => Boolean) = (a: A) => !predicate(a)
+
+  //现在，对于一个已有的谓词 p ，调用 complement(p) 可以得到它的补。
+  //scala的可组合能力：厉害！！！
+  //给定两个函数f、g，f.compose(g)返回一个新函数，调用这个新函数时，会首先调用g，然后应用f到g的返回结果上。
+  //类似的，f.andThen(g) 返回的新函数会应用g到f的返回结果上。
+
+  //重写 notSentByAnyOf
+  //当调用notSentByAnyOf1的时候，先调用sentByOneOf函数，这个函数返回一个EmailFilter，是一个Email => Boolean的函数，然后调用 andThen 后面的函数，
+  //后面的函数将应用到这个Email => Boolean函数上，g也就代表这个Email => Boolean函数，complement(g)也会返回一个函数，
+  // 这个函数的参数也是Email类型，但是返回的值总是和g代表的这个函数的返回布尔值相反；
+  val notSentByAnyOf1 = sentByOneOf andThen (g => complement(g))
+
+  //省略complement的参数
+  val notSentByAnyOf2 = sentByOneOf andThen (complement(_))
+
+
+  /**
+    * 谓词组合
+    * 邮件过滤器的第二个问题是，当前只能传递一个EmailFilter给newMailsForUser函数，而用户必然想设置多个标准。所以需要可以一种可以创建组合谓词的方法，
+    * 这个组合谓词可以在任意一个标准满足的情况下返回 true ，或者在都不满足时返回 false 。
+    */
+
+  //满足任意一个过滤条件，即返回True
+  def any[A](predicates: (A => Boolean)*): A => Boolean =
+    a => predicates.exists(pred => pred(a))
+
+  //any的取反，any只有在所有过滤条件都不符合的时候，才返回false，此时none返回True，也就是说所有的过滤条件都不符合时，none返回True；
+  def none[A](predicates: (A => Boolean)*) = complement(any(predicates: _*))
+
+  //满足过滤条件的设置为false，不满足的设置为true，也就是只有在所有过滤条件都符合的时候，返回false，
+  def every[A](predicates: (A => Boolean)*) = none(predicates.view.map(complement(_)): _*)
 }
