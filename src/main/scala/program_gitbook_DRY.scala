@@ -92,7 +92,7 @@ object program_gitbook_DRY {
 
 
   /**
-    * 谓词组合
+    * 谓词组合，厉害
     * 邮件过滤器的第二个问题是，当前只能传递一个EmailFilter给newMailsForUser函数，而用户必然想设置多个标准。所以需要可以一种可以创建组合谓词的方法，
     * 这个组合谓词可以在任意一个标准满足的情况下返回 true ，或者在都不满足时返回 false 。
     */
@@ -104,6 +104,38 @@ object program_gitbook_DRY {
   //any的取反，any只有在所有过滤条件都不符合的时候，才返回false，此时none返回True，也就是说所有的过滤条件都不符合时，none返回True；
   def none[A](predicates: (A => Boolean)*) = complement(any(predicates: _*))
 
-  //满足过滤条件的设置为false，不满足的设置为true，也就是只有在所有过滤条件都符合的时候，返回false，
+  //满足过滤条件的设置为false，不满足的设置为true，再把这个predicates传递给any，所以此时any只有在所有过滤条件都符合的时候，才返回false，此时none返回true，
+  //所以every代表的意思是所有过滤条件都符合时，返回true；
   def every[A](predicates: (A => Boolean)*) = none(predicates.view.map(complement(_)): _*)
+
+  //可以使用它们来创建代表用户设置的组合 EmailFilter ：
+  val filter: EmailFilter = every(
+    notSentByAnyOf(Set("johndoe@example.com")),
+    minimumSize(100),
+    maximumSize(10000)
+  )
+
+
+  /**
+    * 流水线组合
+    * 还想对用户发送的邮件做一些处理。这是一些简单的 Email => Email 函数，一些可能的处理函数是：
+    */
+  val addMissingSubject = (email: Email) =>
+    if (email.subject.isEmpty) email.copy(subject = "No subject")
+    else email
+  val checkSpelling = (email: Email) =>
+    email.copy(text = email.text.replaceAll("your", "you're"))
+  val removeInappropriateLanguage = (email: Email) =>
+    email.copy(text = email.text.replaceAll("dynamic typing", "**CENSORED**"))
+  val addAdvertismentToFooter = (email: Email) =>
+    email.copy(text = email.text + "\nThis mail sent via Super Awesome Free Mail")
+
+
+  //按需配置邮件处理的流水线 / 还可以用andThen 实现
+  val pipeline = Function.chain(Seq(
+    addMissingSubject,
+    checkSpelling,
+    removeInappropriateLanguage,
+    addAdvertismentToFooter))
+
 }
