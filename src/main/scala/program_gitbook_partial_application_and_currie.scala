@@ -76,4 +76,43 @@ object program_gitbook_partial_application_and_currie {
   //柯里化函数转换成非柯里化
   //使用 Funtion.uncurried 进行反向操作
 
+
+  /**
+    * 函数化的依赖注入
+    * ioc？
+    */
+  case class User(name: String)
+
+  //下面两个 Repository 接口为依赖；
+  trait EmailRepository {
+    def getMails(user: User, unread: Boolean): Seq[Email]
+  }
+  trait FilterRepository {
+    def getEmailFilter(user: User): EmailFilter
+  }
+
+  //对外暴露的服务
+  trait MailboxService {
+    //依赖两个不同存储库的服务，这些依赖被声明为 getNewMails 方法的参数，并且每个依赖都在一个单独的参数列表里。
+    def getNewMails(emailRepo: EmailRepository)(filterRepo: FilterRepository)(user: User) =
+      emailRepo.getMails(user, true).filter(filterRepo.getEmailFilter(user))
+
+    //留空了字段 newMails，这个字段的类型是一个函数： User => Seq[Email]，依赖于 MailboxService 的组件会调用这个函数。
+    val newMails: User => Seq[Email]
+  }
+
+  object MockEmailRepository extends EmailRepository {
+    def getMails(user: User, unread: Boolean): Seq[Email] = Nil
+  }
+  object MockFilterRepository extends FilterRepository {
+    def getEmailFilter(user: User): EmailFilter = _ => true
+  }
+
+  //扩展MailboxService时，实现 newMails 的方法就是应用 getNewMails 这个方法，把依赖 EmailRepository 、 FilterRepository 的具体实现传递给它：
+  object MailboxServiceWithMockDeps extends MailboxService {
+    val newMails: (User) => Seq[Email] =
+      getNewMails(MockEmailRepository)(MockFilterRepository) _
+  }
+
+  //调用 MailboxServiceWithMockDeps.newMails(User("daniel") 无需指定要使用的存储库。在实际的应用程序中，这个服务也可能是以依赖的方式被使用，而不是直接引用。
 }
