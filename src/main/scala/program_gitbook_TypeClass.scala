@@ -64,7 +64,7 @@ object program_gitbook_TypeClass {
     //类型类总会带着一个或多个类型参数，通常是无状态的，比如：里面定义的方法只对传入的参数进行操作。
     import annotation.implicitNotFound
     @implicitNotFound("No member of type class NumberLike in scope for ${T}")  //自定义错误消息(没有找到对应的隐式参数类型)
-    trait NumberLike[T] {  //类型类特质 : NumberLike
+    trait NumberLike[T] {  //类型类特质 : NumberLike  它来定义怎么计算
       def plus(x: T, y: T): T
       def divide(x: T, y: Int): T
       def minus(x: T, y: T): T
@@ -125,5 +125,31 @@ object program_gitbook_TypeClass {
         implicitly[NumberLike[T]].minus(upperQuartile, lowerQuartile)
     }
   }
+
+  /**
+    * 自定义的类型类成员
+    */
+  object JodaImplicits {
+    import Math.NumberLike
+    import org.joda.time.Duration
+
+    implicit object NumberLikeDuration extends NumberLike[Duration] {
+      def plus(x: Duration, y: Duration): Duration = x.plus(y)
+      def divide(x: Duration, y: Int): Duration = Duration.millis(x.getMillis / y)
+      def minus(x: Duration, y: Duration): Duration = x.minus(y)
+    }
+  }
+
+  //导入包含这个实现的包或者对象，就可以计算一堆 durations 的平均值了：
+  import Statistics3._
+  import JodaImplicits._
+  import org.joda.time.Duration._
+
+  val durations = Vector(standardSeconds(20), standardSeconds(57), standardMinutes(2),
+    standardMinutes(17), standardMinutes(30), standardMinutes(58), standardHours(2),
+    standardHours(5), standardHours(8), standardHours(17), standardDays(1),
+    standardDays(4))
+  println(mean(durations).getStandardHours)
+
 
 }
