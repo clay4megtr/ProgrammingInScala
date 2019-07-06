@@ -1,4 +1,6 @@
 
+
+//类型类：程序既拥抱扩展性，又不放弃具体的类型信息
 object program_gitbook_TypeClass {
 
   /**
