@@ -158,5 +158,25 @@ object program_gitbook_Either {
 
   //Either 非常适用于这种比异常处理更为普通的使用场景。
 
-  
+
+  /**
+    * catching and opt
+    * 因为返回的是一个Option，所以You can then deal with this with map or filter or getOrElse or whatever else you use to deal with options.
+    */
+  type NFE = NumberFormatException
+
+  catching(classOf[NFE]) opt ( "fish".toInt )  //Option[Int] = None   如果捕获了目标异常，返回Node
+
+  catching(classOf[NFE]) opt ( "42".toInt )   //Option[Int] = Some(42)   否则正常返回
+
+  //either，对于Either来说，看上面的 handling 例子更好，
+
+  catching(classOf[NFE]).either( "fish".toInt )   //Either[Throwable,Int] = Left(java.lang.NumberFormatException: For input string: "fish")
+
+  catching(classOf[NFE]).either( "42".toInt )    //Either[Throwable,Int] = Right(42)
+
+  //可以定义一个 catcher 来使用多次
+  val catcher = catching(classOf[NFE])
+  catcher.opt("42".toInt)
+  catcher.opt("fish".toInt)
 }
